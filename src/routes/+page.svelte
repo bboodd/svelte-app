@@ -1,62 +1,69 @@
 <script>
-	import Counter from './Counter.svelte';
-	import welcome from '$lib/images/svelte-welcome.webp';
-	import welcomeFallback from '$lib/images/svelte-welcome.png';
-	import { prerender } from './+page';
+	import { onMount } from "svelte";
+
+	let email = '';
+	let password = '';
+	let message = '';
+
+	async function handleSignup() {
+		const res = await fetch('/api/auth/signup', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email, password })
+		});
+		const data = await res.json();
+		message = data.message;
+	}
+
+	async function handleLogin() {
+		const res = await fetch('/api/auth/login', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email, password })
+		});
+		const data = await res.json();
+		message = data.message;
+	}
+
+	async function handleLogout() {
+		const res = await fetch('/api/auth/logout', {
+			 method: 'POST',
+			 credentials: 'include' 
+			});
+		const data = await res.json();
+		message = data.message;
+	}
+
+	async function testProtected() {
+		const res = await fetch('/api/protected');
+		if (res.status === 401) {
+			// 만약 access 만료라면 refresh
+			const refreshRes = await fetch('/api/auth/refresh', { method: 'POST' });
+			if (refreshRes.ok) {
+				// 리프레시 성공 -> 다시 api 호출
+				const retryRes = await fetch('/api/protected');
+				const retryData = await retryRes.json();
+				message = retryData.message || 'retry fail?';
+			} else {
+				// refresh 만료
+				message = (await refreshRes.json()).message || 'Need re-login';
+			}
+		} else {
+			// 200 or other
+			const data = await res.json();
+			message = data.message;
+		}
+	}
 </script>
 
-<svelte:head>
-	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
-</svelte:head>
+<h1>Auth Demo</h1>
+<input bind:value={email} placeholder="Email" />
+<input type="password" bind:value={password} placeholder="Password" />
+<br />
 
-<section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcomeFallback} alt="Welcome" />
-			</picture>
-		</span>
+<button on:click={handleSignup}>Signup</button>
+<button on:click={handleLogin}>Login</button>
+<button on:click={handleLogout}>Logout</button>
+<button on:click={testProtected}>Call Protected API</button>
 
-		to your new<br />SvelteKit app
-	</h1>
-
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
-
-	<h1>{prerender}</h1>
-
-	<Counter />
-</section>
-
-<style>
-	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 0.6;
-	}
-
-	h1 {
-		width: 100%;
-	}
-
-	.welcome {
-		display: block;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
-	}
-
-	.welcome img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		display: block;
-	}
-</style>
+<p>{message}</p>
