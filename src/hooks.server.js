@@ -25,3 +25,18 @@ export const handle = async ({ event, resolve }) => {
 
     return resolve(event);
 };
+
+// export const handleError = async ({ error, event}) => {
+//     const routeId = event.route?.id ?? '(no route)';
+
+//     const errorMessage = typeof error === 'object' && error !== null
+//     ? error.message || JSON.stringify(error)
+//     : String(error);
+
+//     console.error('[SERVER ERROR]', routeId, errorMessage);
+
+//     return {
+//         message: '서버 에러가 발생했습니다.',
+//         code: 'UNKNOWN_ERROR'
+//     };
+// }
